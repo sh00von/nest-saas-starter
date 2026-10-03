@@ -20,7 +20,9 @@ export const InjectDb = () => Inject(DB);
       provide: PG_CLIENT,
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) =>
-        postgres(config.get('DATABASE_URL', { infer: true })),
+        postgres(config.get('DATABASE_URL', { infer: true }), {
+          max: config.get('DATABASE_POOL_MAX', { infer: true }),
+        }),
     },
     {
       provide: DB,
