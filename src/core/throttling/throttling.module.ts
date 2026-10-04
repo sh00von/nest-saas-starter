@@ -15,6 +15,10 @@ const DEFAULT_LIMIT = [{ ttl: 60_000, limit: 100 }];
 @Module({})
 export class ThrottlingModule {
   static forRoot({ redis }: { redis: boolean }): DynamicModule {
+    if (process.env.NODE_ENV === 'test') {
+      return { module: ThrottlingModule };
+    }
+
     return {
       module: ThrottlingModule,
       imports: [

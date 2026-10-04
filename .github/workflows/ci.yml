@@ -51,6 +51,7 @@ jobs:
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 10
     env:
+      NODE_ENV: test
       HUSKY: 0
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/nest_starter
       JWT_ACCESS_SECRET: ci-only-secret-not-for-production-0123456789

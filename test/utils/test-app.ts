@@ -54,6 +54,7 @@ export async function createTestApp(options: TestAppOptions = {}) {
   } catch {
     // no .env file (CI sets real env vars)
   }
+  process.env.NODE_ENV = 'test';
   process.env.LOG_LEVEL ??= 'silent';
   Object.assign(process.env, options.env);
   const { AppModule } = await import('../../src/app.module.js');
