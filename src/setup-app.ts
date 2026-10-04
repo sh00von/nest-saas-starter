@@ -27,7 +27,11 @@ export function setupApp(app: INestApplication): void {
 
   // The API only serves JSON (plus the docs page, which loads Scalar from a
   // CDN), so a Content-Security-Policy adds nothing here.
-  app.use(helmet({ contentSecurityPolicy: false }));
+  const helmetFn =
+    typeof helmet === 'function'
+      ? (helmet as (options?: unknown) => any)
+      : (helmet as unknown as { default: (options?: unknown) => any }).default;
+  app.use(helmetFn({ contentSecurityPolicy: false }));
   app.use(cookieParser());
   app.enableCors({
     origin: config.get('CORS_ORIGINS', { infer: true }),
