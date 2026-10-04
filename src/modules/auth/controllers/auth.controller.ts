@@ -10,7 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import {
   type AuthUser,
@@ -27,7 +26,7 @@ import {
 import { type AuthResult, AuthService } from '../services/auth.service.js';
 import { RefreshCookieService } from '../services/refresh-cookie.service.js';
 import { SessionService } from '../services/session.service.js';
-import { STRICT_LIMIT, sessionMeta } from './shared.js';
+import { sessionMeta } from './shared.js';
 
 /** Where the refresh token travels: an httpOnly cookie, or the JSON body. */
 type Transport = 'cookie' | 'body';
@@ -51,7 +50,6 @@ export class AuthController {
   /** Create an account and start a session. A verification email is sent. */
   @Public()
   @UseGuards(JsonOnlyGuard)
-  @Throttle(STRICT_LIMIT)
   @tokenTransportHeader
   @Post('register')
   async register(
@@ -66,7 +64,6 @@ export class AuthController {
   /** Exchange email and password for an access token and refresh token. */
   @Public()
   @UseGuards(JsonOnlyGuard)
-  @Throttle(STRICT_LIMIT)
   @tokenTransportHeader
   @HttpCode(HttpStatus.OK)
   @Post('login')

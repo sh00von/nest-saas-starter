@@ -1,13 +1,12 @@
 import { Controller, Get, Logger, Query, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { API_PREFIX } from '../../common/api-version.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { buildUrl } from '../../common/url.js';
 import type { Env } from '../../config/env.js';
-import { sessionMeta, STRICT_LIMIT } from '../auth/controllers/shared.js';
+import { sessionMeta } from '../auth/controllers/shared.js';
 import { RefreshCookieService } from '../auth/services/refresh-cookie.service.js';
 import { GoogleAuthService } from './google-auth.service.js';
 
@@ -24,7 +23,6 @@ const FLOW_TTL_MS = 10 * 60 * 1000;
  */
 @ApiTags('Auth')
 @Public()
-@Throttle(STRICT_LIMIT)
 @Controller('auth/google')
 export class GoogleAuthController {
   private readonly logger = new Logger(GoogleAuthController.name);

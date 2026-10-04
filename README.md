@@ -10,8 +10,8 @@ A production-minded NestJS 12 SaaS starter you can clone and build on. Every fea
 - **Database**: Drizzle ORM on PostgreSQL (PGlite locally with no install, or Neon, Supabase, RDS…) with committed SQL migrations
 - **Billing**: Stripe Checkout, Customer Portal, a signature-verified webhook, and cancellation on account deletion (optional)
 - **API**: versioned under `/v1`, OpenAPI from your DTOs rendered with [Scalar](https://scalar.com) at `/docs`, one error format everywhere
-- **Operations**: structured JSON logs with request IDs, health checks, graceful shutdown, rate limiting
-- **Hardening**: env validation (zod), validation pipe, rate limiting, CSRF-safe cookie routes, helmet, CORS
+- **Operations**: structured JSON logs with request IDs, health checks, graceful shutdown
+- **Hardening**: env validation (zod), validation pipe, CSRF-safe cookie routes, helmet, CORS
 - **Tooling**: pnpm, Vitest (unit + e2e), oxlint, Prettier, husky pre-commit, GitHub Actions CI, Dependabot
 
 ## Quick start
@@ -46,7 +46,6 @@ src/
   core/                                    infrastructure, no business logic
     logging/                               pino logger + request ids
     errors/                                global error filter (one response shape)
-    throttling/                            rate limits
   common/                                  small shared helpers
     decorators/                            @Public(), @Roles(), @CurrentUser()
     guards/json-only.guard.ts              CSRF defence for cookie routes

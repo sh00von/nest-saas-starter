@@ -10,7 +10,6 @@ import {
   VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { StripeWebhookService } from './stripe-webhook.service.js';
@@ -18,7 +17,6 @@ import { StripeWebhookService } from './stripe-webhook.service.js';
 /** Stripe calls this; authenticated by the `stripe-signature` header. */
 @ApiExcludeController()
 @Public()
-@SkipThrottle()
 // Unversioned: the URL is registered in the Stripe dashboard.
 @Controller({ path: 'billing/webhook', version: VERSION_NEUTRAL })
 export class StripeWebhookController {

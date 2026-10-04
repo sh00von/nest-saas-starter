@@ -7,7 +7,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   type AuthUser,
   CurrentUser,
@@ -16,7 +15,6 @@ import { Public } from '../../../common/decorators/public.decorator.js';
 import { JsonOnlyGuard } from '../../../common/guards/json-only.guard.js';
 import { TokenDto } from '../dto/auth.dto.js';
 import { EmailVerificationService } from '../services/email-verification.service.js';
-import { STRICT_LIMIT } from './shared.js';
 
 @ApiTags('Auth')
 @Controller('auth/verify-email')
@@ -34,7 +32,6 @@ export class EmailVerificationController {
 
   /** Send the verification email again. */
   @ApiBearerAuth()
-  @Throttle(STRICT_LIMIT)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post('resend')
   resend(@CurrentUser() user: AuthUser): Promise<void> {

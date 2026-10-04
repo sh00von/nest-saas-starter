@@ -7,7 +7,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   type AuthUser,
   CurrentUser,
@@ -20,12 +19,10 @@ import {
   ResetPasswordDto,
 } from '../dto/auth.dto.js';
 import { PasswordService } from '../services/password.service.js';
-import { STRICT_LIMIT } from './shared.js';
 
 @ApiTags('Auth')
 @Controller('auth')
 @UseGuards(JsonOnlyGuard)
-@Throttle(STRICT_LIMIT)
 export class PasswordController {
   constructor(private readonly passwords: PasswordService) {}
 

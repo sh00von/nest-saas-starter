@@ -5,14 +5,12 @@ import {
   VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
 import { sql } from 'drizzle-orm';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { type Database, InjectDb } from '../../database/database.module.js';
 
 @ApiTags('Health')
 @Public()
-@SkipThrottle()
 // Unversioned: load balancers keep a fixed URL.
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
