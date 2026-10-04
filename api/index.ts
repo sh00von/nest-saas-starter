@@ -2,8 +2,8 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { type Express } from 'express';
-import { AppModule } from '../dist/app.module.js';
-import { setupApp } from '../dist/setup-app.js';
+import { AppModule } from '../src/app.module.js';
+import { setupApp } from '../src/setup-app.js';
 
 const server: Express = express();
 let isReady = false;
