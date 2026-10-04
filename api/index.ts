@@ -11,6 +11,7 @@ let readyPromise: Promise<void> | null = null;
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
+    rawBody: true,
     bufferLogs: true,
   });
   setupApp(app);

@@ -202,7 +202,8 @@ This starter is configured for zero-config Vercel Serverless deployment out of t
 
 1. Import this repository in [Vercel](https://vercel.com).
 2. Set Environment Variables in Project Settings:
-   - `DATABASE_URL`: your Neon or Supabase connection string (include `?sslmode=require`)
+   - `DATABASE_URL`: your Neon or Supabase connection string (include `?sslmode=require`, pooled string recommended)
+   - `DATABASE_POOL_MAX`: `1` (prevents serverless functions from exhausting database connection limits)
    - `JWT_ACCESS_SECRET`: at least 32 random characters
    - `API_URL`: your Vercel deployment URL (e.g. `https://your-project.vercel.app`)
    - `FRONTEND_URL`: your frontend application URL
