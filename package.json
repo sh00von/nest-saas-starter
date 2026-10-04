@@ -98,7 +98,7 @@
     "openapi"
   ],
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "packageManager": "pnpm@12.3.4",
   "lint-staged": {

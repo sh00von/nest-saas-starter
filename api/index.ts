@@ -1,16 +1,15 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import express, { type Express } from 'express';
 import { AppModule } from '../src/app.module.js';
 import { setupApp } from '../src/setup-app.js';
 
-const server: Express = express();
+const expressAdapter = new ExpressAdapter();
 let isReady = false;
 let readyPromise: Promise<void> | null = null;
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
+  const app = await NestFactory.create(AppModule, expressAdapter, {
     rawBody: true,
     bufferLogs: true,
   });
@@ -33,7 +32,11 @@ export default async function handler(
       }
       await readyPromise;
     }
-    server(req, res);
+    const instance = expressAdapter.getInstance() as (
+      req: IncomingMessage,
+      res: ServerResponse,
+    ) => void;
+    instance(req, res);
   } catch (err: unknown) {
     const errorMsg =
       err instanceof Error ? err.stack || err.message : String(err);
