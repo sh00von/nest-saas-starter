@@ -14,7 +14,7 @@ export const envSchema = z
   .object({
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
-      .default('development'),
+      .default(process.env.VERCEL ? 'production' : 'development'),
     PORT: z.coerce.number().int().positive().default(3000),
     CORS_ORIGINS: csv,
     // Public URL of this API (OAuth callbacks).

@@ -38,6 +38,7 @@ export const LoggingModule = LoggerModule.forRootAsync({
       ],
       autoLogging: { ignore: (req) => req.url?.startsWith('/health') ?? false },
       transport:
+        !process.env.VERCEL &&
         config.get('NODE_ENV', { infer: true }) === 'development'
           ? { target: 'pino-pretty', options: { singleLine: true } }
           : undefined,
