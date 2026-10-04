@@ -3,16 +3,16 @@
 A production-minded NestJS 12 SaaS starter you can clone and build on. Every feature is a self-contained module, so you can change, swap or delete one without touching the rest.
 
 - **Auth**: email + password (argon2), short-lived JWT access tokens, rotating refresh tokens with reuse detection, per-device sessions, roles
-- **Email**: verification and password reset over SMTP, queued with retries when Redis is available
+- **Email**: verification and password reset over SMTP
 - **Google sign-in**: OAuth 2.0 with PKCE (optional)
 - **Admin**: list users, change roles, ban / unban
 - **File uploads**: direct-to-S3 with presigned URLs (optional)
-- **Database**: Drizzle ORM on PostgreSQL (PGlite locally with no install, or Neon, Supabase, Docker, RDS…) with committed SQL migrations
+- **Database**: Drizzle ORM on PostgreSQL (PGlite locally with no install, or Neon, Supabase, RDS…) with committed SQL migrations
 - **Billing**: Stripe Checkout, Customer Portal, a signature-verified webhook, and cancellation on account deletion (optional)
 - **API**: versioned under `/v1`, OpenAPI from your DTOs rendered with [Scalar](https://scalar.com) at `/docs`, one error format everywhere
-- **Operations**: structured JSON logs with request IDs, health checks, graceful shutdown, Redis-backed rate limits (optional)
+- **Operations**: structured JSON logs with request IDs, health checks, graceful shutdown, rate limiting
 - **Hardening**: env validation (zod), validation pipe, rate limiting, CSRF-safe cookie routes, helmet, CORS
-- **Tooling**: pnpm, Vitest (unit + e2e), oxlint, Prettier, husky pre-commit, GitHub Actions CI, Dependabot, multi-stage Dockerfile
+- **Tooling**: pnpm, Vitest (unit + e2e), oxlint, Prettier, husky pre-commit, GitHub Actions CI, Dependabot
 
 ## Quick start
 
@@ -33,9 +33,8 @@ Open <http://localhost:3000/docs> for the API reference. The raw spec is at `/op
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm db:local`                      | Nothing to install. Runs [PGlite](https://pglite.dev) (Postgres compiled to WASM) on port 5432, data in `./.pglite`. Keep `DATABASE_POOL_MAX=1`. For development only. |
 | [Neon](https://neon.tech) / Supabase | Free hosted Postgres. Paste the connection string into `DATABASE_URL` and set `DATABASE_POOL_MAX=10`.                                                                  |
-| `docker compose up -d`               | Postgres 17 in Docker. `DATABASE_URL=postgres://postgres:postgres@localhost:5432/nest_starter`, `DATABASE_POOL_MAX=10`.                                                |
 
-Everything else is optional and switched on by its env vars (see `.env.example`): Redis, S3, SMTP, Google, Stripe.
+Everything else is optional and switched on by its env vars (see `.env.example`): S3, SMTP, Google, Stripe.
 
 ## Architecture
 
@@ -47,7 +46,7 @@ src/
   core/                                    infrastructure, no business logic
     logging/                               pino logger + request ids
     errors/                                global error filter (one response shape)
-    redis/  queue/  throttling/            Redis client, BullMQ, rate limits
+    throttling/                            rate limits
   common/                                  small shared helpers
     decorators/                            @Public(), @Roles(), @CurrentUser()
     guards/json-only.guard.ts              CSRF defence for cookie routes
@@ -58,7 +57,7 @@ src/
       services/                            one job each (see below)
       guards/  listeners/  dto/
     users/                                 profile, account deletion, admin, users.events.ts
-    mail/                                  MailService → queue → MailProcessor → MailTransport; templates/
+    mail/                                  MailService → MailTransport; templates/
     google-auth/                           Sign in with Google        (on when GOOGLE_CLIENT_ID is set)
     files/                                 S3 uploads                 (on when S3_BUCKET is set)
     billing/                               Stripe                     (on when STRIPE_SECRET_KEY is set)
@@ -139,16 +138,7 @@ test/                                      e2e tests + utils/test-app.ts
 
 Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `MAIL_FROM`. Any SMTP provider works (Gmail app password, Resend, SES, Mailgun…). Without `SMTP_HOST`, development prints emails to the console. Production drops them with a warning, so login links never end up in logs.
 
-With `REDIS_URL` set, emails go on a BullMQ queue and are retried 5 times with exponential backoff if SMTP fails. Without Redis they are sent immediately.
-
-Links point to your frontend: `FRONTEND_URL/verify-email?token=…` and `FRONTEND_URL/reset-password?token=…`. Those pages POST the token to the API. Edit the wording in `src/modules/mail/templates/`.
-
-## Redis (optional)
-
-Set `REDIS_URL` (e.g. a free [Upstash](https://upstash.com) database, or `docker run -p 6379:6379 redis`) to get:
-
-- **Email queue** with retries (above). Add your own queues with `BullModule.registerQueue` in your module. `src/modules/mail/` is the example to copy.
-- **Shared rate limits**: counters live in Redis, so limits hold across every running instance. Without Redis, each process counts on its own.
+Emails are delivered immediately via SMTP. Links point to your frontend: `FRONTEND_URL/verify-email?token=…` and `FRONTEND_URL/reset-password?token=…`. Those pages POST the token to the API. Edit the wording in `src/modules/mail/templates/`.
 
 ## File uploads to S3 (optional)
 
@@ -181,7 +171,7 @@ pnpm db:migrate      # applies it (dev, via drizzle-kit)
 pnpm db:studio       # browse data
 ```
 
-In production, `node dist/database/migrate.js` (`pnpm db:migrate:prod`) applies migrations without drizzle-kit, and the Docker image runs it on start. CI fails if a schema change has no committed migration.
+In production, `node dist/database/migrate.js` (`pnpm db:migrate:prod`) applies migrations without drizzle-kit. CI fails if a schema change has no committed migration.
 
 ## Stripe (optional)
 
@@ -206,12 +196,31 @@ The webhook re-fetches each subscription from Stripe instead of trusting the eve
 
 ## Deploying
 
+### Vercel (Serverless)
+
+This starter is configured for zero-config Vercel Serverless deployment out of the box via [`vercel.json`](vercel.json) and [`api/index.ts`](api/index.ts):
+
+1. Import this repository in [Vercel](https://vercel.com).
+2. Set Environment Variables in Project Settings:
+   - `DATABASE_URL`: your Neon or Supabase connection string (include `?sslmode=require`)
+   - `JWT_ACCESS_SECRET`: at least 32 random characters
+   - `API_URL`: your Vercel deployment URL (e.g. `https://your-project.vercel.app`)
+   - `FRONTEND_URL`: your frontend application URL
+   - Optional: Stripe, S3, SMTP, or Google OAuth keys
+3. Apply database migrations to your remote database:
+   ```bash
+   pnpm db:migrate:prod
+   ```
+
+### Node / VPS / PaaS
+
 ```bash
-docker build -t nest-starter .
-docker run -p 3000:3000 --env-file .env nest-starter
+pnpm build
+pnpm db:migrate:prod
+pnpm start:prod
 ```
 
-Behind a load balancer, set `TRUST_PROXY=1` so rate limits and session IPs use the real client IP. If the frontend is on a different site, set `COOKIE_SAME_SITE=none` (HTTPS is required) and list it in `CORS_ORIGINS`. With more than one instance, set `REDIS_URL` so rate limits are shared.
+Behind a load balancer or reverse proxy, set `TRUST_PROXY=1` so rate limits and session IPs use the real client IP. If the frontend is on a different site, set `COOKIE_SAME_SITE=none` (HTTPS is required) and list it in `CORS_ORIGINS`.
 
 ## Contributing
 

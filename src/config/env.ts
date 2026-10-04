@@ -44,9 +44,6 @@ export const envSchema = z
     SMTP_PASS: z.string().optional(),
     MAIL_FROM: z.string().default('Nest SaaS Starter <no-reply@example.com>'),
 
-    // Enables the email queue (retries) and shared rate limits across instances.
-    REDIS_URL: z.url().optional(),
-
     // Enables file uploads. Credentials fall back to the AWS default chain
     // (env, ~/.aws, instance role) when the keys are unset.
     S3_BUCKET: z.string().optional(),

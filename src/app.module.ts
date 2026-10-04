@@ -47,7 +47,7 @@ const optionalModules = [
     configModule,
     CoreModule.forRoot(),
     DatabaseModule,
-    MailModule.forRoot({ queue: Boolean(env.REDIS_URL) }),
+    MailModule,
     // Features
     AuthModule,
     UsersModule,

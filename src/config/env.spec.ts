@@ -22,8 +22,8 @@ describe('validateEnv', () => {
   });
 
   it('treats empty values as unset', () => {
-    const env = validateEnv({ ...base, REDIS_URL: '', PORT: '' });
-    expect(env.REDIS_URL).toBeUndefined();
+    const env = validateEnv({ ...base, SMTP_HOST: '', PORT: '' });
+    expect(env.SMTP_HOST).toBeUndefined();
     expect(env.PORT).toBe(3000);
   });
 

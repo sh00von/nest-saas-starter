@@ -26,13 +26,6 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Both setups the app supports: plain, and with Redis (email queue +
-        # shared rate limits).
-        redis: [false, true]
-    name: e2e (redis ${{ matrix.redis }})
     services:
       postgres:
         image: postgres:17-alpine
@@ -44,12 +37,6 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 3s --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       NODE_ENV: test
       HUSKY: 0
@@ -57,7 +44,6 @@ jobs:
       JWT_ACCESS_SECRET: ci-only-secret-not-for-production-0123456789
       SEED_ADMIN_EMAIL: admin@example.com
       SEED_ADMIN_PASSWORD: ci-admin-password
-      REDIS_URL: ${{ matrix.redis && 'redis://localhost:6379' || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
