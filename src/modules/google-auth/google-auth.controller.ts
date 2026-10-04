@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
+import { API_PREFIX } from '../../common/api-version.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { buildUrl } from '../../common/url.js';
 import type { Env } from '../../config/env.js';
@@ -11,14 +12,14 @@ import { RefreshCookieService } from '../auth/services/refresh-cookie.service.js
 import { GoogleAuthService } from './google-auth.service.js';
 
 const FLOW_COOKIE = 'google_oauth';
-const FLOW_COOKIE_PATH = '/auth/google';
+const FLOW_COOKIE_PATH = `${API_PREFIX}/auth/google`;
 const FLOW_TTL_MS = 10 * 60 * 1000;
 
 /**
  * Browser redirect flow:
- * frontend links to `GET /auth/google` → Google → `GET /auth/google/callback`
+ * frontend links to `GET /v1/auth/google` → Google → `GET /v1/auth/google/callback`
  * → redirect to `FRONTEND_URL/auth/callback` with the refresh cookie set.
- * The frontend then calls `POST /auth/refresh` to get an access token.
+ * The frontend then calls `POST /v1/auth/refresh` to get an access token.
  * On failure it redirects to `FRONTEND_URL/login?error=google`.
  */
 @ApiTags('Auth')

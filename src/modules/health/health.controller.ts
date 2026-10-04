@@ -1,4 +1,9 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ServiceUnavailableException,
+  VERSION_NEUTRAL,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { sql } from 'drizzle-orm';
@@ -8,7 +13,8 @@ import { type Database, InjectDb } from '../../database/database.module.js';
 @ApiTags('Health')
 @Public()
 @SkipThrottle()
-@Controller('health')
+// Unversioned: load balancers keep a fixed URL.
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
   constructor(@InjectDb() private readonly db: Database) {}
 

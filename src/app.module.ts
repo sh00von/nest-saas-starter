@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { createObserveModule } from '@nestjs/observe';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env.js';
+import { CoreModule } from './core/core.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
+import { FilesModule } from './modules/files/files.module.js';
 import { GoogleAuthModule } from './modules/google-auth/google-auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
@@ -15,25 +14,28 @@ import { UsersModule } from './modules/users/users.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
-// ConfigModule.forRoot() loads .env synchronously, so the optional modules
-// below can be chosen from process.env right after it.
+// ConfigModule.forRoot() loads .env synchronously, so everything below can
+// read process.env to decide which optional modules to load.
 const configModule = ConfigModule.forRoot({
   isGlobal: true,
   cache: true,
   validate: validateEnv,
 });
 
+const env = process.env;
+
 /** Features that switch on when their configuration is present. */
 const optionalModules = [
-  ...(process.env.GOOGLE_CLIENT_ID ? [GoogleAuthModule] : []),
-  ...(process.env.STRIPE_SECRET_KEY ? [BillingModule] : []),
+  ...(env.GOOGLE_CLIENT_ID ? [GoogleAuthModule] : []),
+  ...(env.STRIPE_SECRET_KEY ? [BillingModule] : []),
+  ...(env.S3_BUCKET ? [FilesModule] : []),
   // Tracing, logs and metrics: https://observe.nestjs.com
-  ...(process.env.OBSERVE_APP_KEY
+  ...(env.OBSERVE_APP_KEY
     ? [
         ObserveModule.forRoot({
-          appKey: process.env.OBSERVE_APP_KEY,
-          appSecret: process.env.OBSERVE_APP_SECRET ?? '',
-          serviceId: 'nest-starter',
+          appKey: env.OBSERVE_APP_KEY,
+          appSecret: env.OBSERVE_APP_SECRET ?? '',
+          serviceId: 'nest-saas-starter',
         }),
       ]
     : []),
@@ -43,16 +45,14 @@ const optionalModules = [
   imports: [
     // Infrastructure
     configModule,
-    EventEmitterModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    CoreModule.forRoot(),
     DatabaseModule,
-    MailModule,
+    MailModule.forRoot({ queue: Boolean(env.REDIS_URL) }),
     // Features
     AuthModule,
     UsersModule,
     HealthModule,
     ...optionalModules,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

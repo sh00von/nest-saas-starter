@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -59,10 +60,15 @@ export class AuthService {
     const rotated = await this.sessions.rotate(refreshToken);
     const user = await this.users.findById(rotated.userId);
     if (!user) throw new UnauthorizedException('Invalid refresh token');
+    if (user.bannedAt) {
+      await this.sessions.revoke(rotated.sessionId);
+      throw new ForbiddenException('Account is banned');
+    }
     return this.buildResult(user, rotated.sessionId, rotated);
   }
 
   async startSession(user: User, meta: SessionMeta): Promise<AuthResult> {
+    if (user.bannedAt) throw new ForbiddenException('Account is banned');
     const issued = await this.sessions.createSession(user.id, meta);
     return this.buildResult(user, issued.sessionId, issued);
   }

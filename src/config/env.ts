@@ -25,6 +25,9 @@ export const envSchema = z
     TRUST_PROXY: z.coerce.number().int().min(0).default(0),
     // Use `none` when the frontend is on a different site than the API.
     COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
 
     DATABASE_URL: z.url(),
     // Max connections in the pool. Use 1 with `pnpm db:local` (PGlite).
@@ -39,7 +42,35 @@ export const envSchema = z
     SMTP_PORT: z.coerce.number().int().positive().default(587),
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
-    MAIL_FROM: z.string().default('Nest Starter <no-reply@example.com>'),
+    MAIL_FROM: z.string().default('Nest SaaS Starter <no-reply@example.com>'),
+
+    // Enables the email queue (retries) and shared rate limits across instances.
+    REDIS_URL: z.url().optional(),
+
+    // Enables file uploads. Credentials fall back to the AWS default chain
+    // (env, ~/.aws, instance role) when the keys are unset.
+    S3_BUCKET: z.string().optional(),
+    S3_REGION: z.string().default('us-east-1'),
+    S3_ACCESS_KEY_ID: z.string().optional(),
+    S3_SECRET_ACCESS_KEY: z.string().optional(),
+    // Only for S3-compatible servers (e.g. MinIO in tests).
+    S3_ENDPOINT: z.url().optional(),
+    UPLOAD_MAX_BYTES: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(10 * 1024 * 1024),
+    UPLOAD_ALLOWED_TYPES: csv.transform((types) =>
+      types.length
+        ? types
+        : [
+            'image/png',
+            'image/jpeg',
+            'image/webp',
+            'image/gif',
+            'application/pdf',
+          ],
+    ),
 
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
@@ -68,7 +99,11 @@ export const envSchema = z
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(config: Record<string, unknown>): Env {
-  const result = envSchema.safeParse(config);
+  // `KEY=` in .env (or an empty CI variable) means "not set".
+  const present = Object.fromEntries(
+    Object.entries(config).filter(([, value]) => value !== ''),
+  );
+  const result = envSchema.safeParse(present);
   if (!result.success) {
     throw new Error(`Invalid environment:\n${z.prettifyError(result.error)}`);
   }

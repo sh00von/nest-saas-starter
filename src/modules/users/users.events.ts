@@ -12,6 +12,8 @@ export const UserEvents = {
    * aborts the deletion, so cleanup like cancelling billing cannot be skipped.
    */
   Deleting: 'user.deleting',
+  /** Emitted after an admin bans a user; auth ends all their sessions. */
+  Banned: 'user.banned',
 } as const;
 
 export interface UserEvent {

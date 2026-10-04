@@ -1,10 +1,16 @@
-import { type INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  type INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
+import { API_VERSION } from './common/api-version.js';
 import type { Env } from './config/env.js';
 
 /**
@@ -14,6 +20,7 @@ import type { Env } from './config/env.js';
 export function setupApp(app: INestApplication): void {
   const config = app.get(ConfigService<Env, true>);
   const express = app as NestExpressApplication;
+  app.useLogger(app.get(Logger));
 
   const trustProxy = config.get('TRUST_PROXY', { infer: true });
   if (trustProxy > 0) express.set('trust proxy', trustProxy);
@@ -33,12 +40,17 @@ export function setupApp(app: INestApplication): void {
       transform: true,
     }),
   );
+  // Routes are served under /v1/...
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: API_VERSION,
+  });
   app.enableShutdownHooks();
 
   const document = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
-      .setTitle('Nest Starter API')
+      .setTitle('Nest SaaS Starter API')
       .setVersion('1.0.0')
       .addBearerAuth()
       .addCookieAuth('refresh_token')

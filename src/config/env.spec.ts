@@ -21,6 +21,12 @@ describe('validateEnv', () => {
     expect(env.CORS_ORIGINS).toEqual(['http://a.test', 'http://b.test']);
   });
 
+  it('treats empty values as unset', () => {
+    const env = validateEnv({ ...base, REDIS_URL: '', PORT: '' });
+    expect(env.REDIS_URL).toBeUndefined();
+    expect(env.PORT).toBe(3000);
+  });
+
   it('rejects a short JWT secret', () => {
     expect(() => validateEnv({ ...base, JWT_ACCESS_SECRET: 'short' })).toThrow(
       /JWT_ACCESS_SECRET/,

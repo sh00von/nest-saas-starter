@@ -21,24 +21,24 @@ describe('Auth (e2e)', () => {
   });
 
   it('rejects protected routes without a token', () =>
-    http().get('/users/me').expect(401));
+    http().get('/v1/users/me').expect(401));
 
   it('validates the register payload', () =>
     http()
-      .post('/auth/register')
+      .post('/v1/auth/register')
       .send({ email: 'not-an-email', password: 'short' })
       .expect(400));
 
   it('rejects form posts to cookie-setting routes (login CSRF)', () =>
     http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .type('form')
       .send({ email, password })
       .expect(415));
 
   it('runs register, refresh and replay detection with body tokens', async () => {
     const registered = await http()
-      .post('/auth/register')
+      .post('/v1/auth/register')
       .set('x-token-transport', 'body')
       .send({ email, password, name: 'E2E' })
       .expect(201);
@@ -51,32 +51,35 @@ describe('Auth (e2e)', () => {
     expect(registered.headers['set-cookie']).toBeUndefined();
     const { accessToken, refreshToken } = registered.body;
 
-    await http().post('/auth/register').send({ email, password }).expect(409);
+    await http()
+      .post('/v1/auth/register')
+      .send({ email, password })
+      .expect(409);
 
     const me = await http()
-      .get('/users/me')
+      .get('/v1/users/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
     expect(me.body).not.toHaveProperty('passwordHash');
 
     const refreshed = await http()
-      .post('/auth/refresh')
+      .post('/v1/auth/refresh')
       .send({ refreshToken })
       .expect(200);
     expect(refreshed.body.refreshToken).toBeDefined();
     expect(refreshed.body.refreshToken).not.toBe(refreshToken);
 
     // Replaying the old token revokes the session, new token included.
-    await http().post('/auth/refresh').send({ refreshToken }).expect(401);
+    await http().post('/v1/auth/refresh').send({ refreshToken }).expect(401);
     await http()
-      .post('/auth/refresh')
+      .post('/v1/auth/refresh')
       .send({ refreshToken: refreshed.body.refreshToken })
       .expect(401);
   });
 
   it('keeps cookie sessions in the cookie', async () => {
     const login = await http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({ email, password })
       .expect(200);
     expect(login.body.refreshToken).toBeUndefined();
@@ -85,7 +88,7 @@ describe('Auth (e2e)', () => {
 
     // A script asking for the token in the body still only gets a cookie.
     const refreshed = await http()
-      .post('/auth/refresh')
+      .post('/v1/auth/refresh')
       .set('Cookie', cookie)
       .set('x-token-transport', 'body')
       .type('json')
@@ -94,20 +97,20 @@ describe('Auth (e2e)', () => {
     const newCookie = cookieFrom(refreshed);
 
     // A bodiless cross-site POST (no JSON content type) is refused.
-    await http().post('/auth/refresh').set('Cookie', newCookie).expect(415);
+    await http().post('/v1/auth/refresh').set('Cookie', newCookie).expect(415);
 
     const auth = `Bearer ${login.body.accessToken}`;
     const sessions = await http()
-      .get('/auth/sessions')
+      .get('/v1/auth/sessions')
       .set('Authorization', auth)
       .expect(200);
     expect(sessions.body.some((s: { current: boolean }) => s.current)).toBe(
       true,
     );
 
-    await http().post('/auth/logout').set('Authorization', auth).expect(204);
+    await http().post('/v1/auth/logout').set('Authorization', auth).expect(204);
     await http()
-      .post('/auth/refresh')
+      .post('/v1/auth/refresh')
       .set('Cookie', newCookie)
       .type('json')
       .expect(401);
@@ -115,17 +118,17 @@ describe('Auth (e2e)', () => {
 
   it('rejects a wrong password', () =>
     http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({ email, password: 'wrong-password' })
       .expect(401));
 
   it('keeps admin routes for admins', async () => {
     const login = await http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({ email, password })
       .expect(200);
     await http()
-      .get('/users')
+      .get('/v1/admin/users')
       .set('Authorization', `Bearer ${login.body.accessToken}`)
       .expect(403);
   });
@@ -133,8 +136,8 @@ describe('Auth (e2e)', () => {
   it('serves health and the OpenAPI spec', async () => {
     await http().get('/health/ready').expect(200);
     const spec = await http().get('/openapi.json').expect(200);
-    expect(spec.body.paths).toHaveProperty('/auth/login');
+    expect(spec.body.paths).toHaveProperty('/v1/auth/login');
     // Optional modules stay off without configuration.
-    expect(spec.body.paths).not.toHaveProperty('/auth/google');
+    expect(spec.body.paths).not.toHaveProperty('/v1/auth/google');
   });
 });

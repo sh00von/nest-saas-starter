@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -7,7 +8,12 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { count, desc, eq } from 'drizzle-orm';
 import { verifyPassword } from '../../common/crypto/password.js';
 import { type Database, InjectDb } from '../../database/database.module.js';
-import { type NewUser, type User, users } from '../../database/schema/index.js';
+import {
+  type NewUser,
+  type User,
+  type UserRole,
+  users,
+} from '../../database/schema/index.js';
 import { UserDto } from './dto/user.dto.js';
 import { type UserEvent, UserEvents } from './users.events.js';
 
@@ -76,6 +82,28 @@ export class UsersService {
     await this.db.delete(users).where(eq(users.id, id));
   }
 
+  /** Admin: change a user's role. Takes effect at their next token refresh. */
+  async setRole(actorId: string, userId: string, role: UserRole) {
+    this.assertNotSelf(actorId, userId);
+    return this.update(userId, { role });
+  }
+
+  /** Admin: block sign-in and end every session of the user. */
+  async ban(actorId: string, userId: string): Promise<User> {
+    this.assertNotSelf(actorId, userId);
+    const user = await this.update(userId, { bannedAt: new Date() });
+    await this.events.emitAsync(UserEvents.Banned, {
+      user,
+    } satisfies UserEvent);
+    return user;
+  }
+
+  /** Admin: allow the user to sign in again. */
+  unban(actorId: string, userId: string): Promise<User> {
+    this.assertNotSelf(actorId, userId);
+    return this.update(userId, { bannedAt: null });
+  }
+
   async list(page: number, limit: number) {
     const [items, [{ total }]] = await Promise.all([
       this.db
@@ -87,5 +115,12 @@ export class UsersService {
       this.db.select({ total: count() }).from(users),
     ]);
     return { items: items.map((u) => UserDto.from(u)), total, page, limit };
+  }
+
+  /** Admins cannot lock themselves out. */
+  private assertNotSelf(actorId: string, userId: string): void {
+    if (actorId === userId) {
+      throw new BadRequestException('You cannot do this to your own account');
+    }
   }
 }

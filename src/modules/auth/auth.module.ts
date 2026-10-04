@@ -10,6 +10,7 @@ import { PasswordController } from './controllers/password.controller.js';
 import { SessionsController } from './controllers/sessions.controller.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { RolesGuard } from './guards/roles.guard.js';
+import { UserBannedListener } from './listeners/user-banned.listener.js';
 import { AccessTokenService } from './services/access-token.service.js';
 import { AuthService } from './services/auth.service.js';
 import { EmailTokenService } from './services/email-token.service.js';
@@ -51,6 +52,7 @@ import { SessionService } from './services/session.service.js';
     PasswordService,
     RefreshCookieService,
     SessionService,
+    UserBannedListener,
     // Order matters: authenticate first, then check roles.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

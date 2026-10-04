@@ -6,22 +6,10 @@ on:
   pull_request:
 
 jobs:
-  test:
+  checks:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nest_starter
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/nest_starter
-      JWT_ACCESS_SECRET: ci-only-secret-not-for-production-0123456789
+      HUSKY: 0
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -35,7 +23,51 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both setups the app supports: plain, and with Redis (email queue +
+        # shared rate limits).
+        redis: [false, true]
+    name: e2e (redis ${{ matrix.redis }})
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nest_starter
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      HUSKY: 0
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/nest_starter
+      JWT_ACCESS_SECRET: ci-only-secret-not-for-production-0123456789
+      SEED_ADMIN_EMAIL: admin@example.com
+      SEED_ADMIN_PASSWORD: ci-admin-password
+      REDIS_URL: ${{ matrix.redis && 'redis://localhost:6379' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - run: pnpm db:migrate:prod
       # Fails if the schema changed without a committed migration.
       - run: pnpm db:generate && git diff --exit-code drizzle/
+      - run: pnpm db:seed
       - run: pnpm test:e2e

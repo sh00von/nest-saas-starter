@@ -5,21 +5,16 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
-  ParseUUIDPipe,
   Patch,
-  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   type AuthUser,
   CurrentUser,
 } from '../../common/decorators/current-user.decorator.js';
-import { Roles } from '../../common/decorators/roles.decorator.js';
 import { DeleteAccountDto } from './dto/delete-account.dto.js';
-import { ListUsersDto } from './dto/list-users.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
-import { UserDto, UserListDto } from './dto/user.dto.js';
+import { UserDto } from './dto/user.dto.js';
 import { UsersService } from './users.service.js';
 
 @ApiTags('Users')
@@ -54,19 +49,5 @@ export class UsersController {
     @Body() dto: DeleteAccountDto,
   ): Promise<void> {
     return this.users.deleteAccount(user.id, dto.password);
-  }
-
-  /** List all users (admin only). */
-  @Roles('admin')
-  @Get()
-  list(@Query() query: ListUsersDto): Promise<UserListDto> {
-    return this.users.list(query.page, query.limit);
-  }
-
-  /** Get a user by id (admin only). */
-  @Roles('admin')
-  @Get(':id')
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<UserDto> {
-    return UserDto.from(await this.users.getById(id));
   }
 }

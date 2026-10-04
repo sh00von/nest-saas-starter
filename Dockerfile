@@ -4,6 +4,8 @@ RUN corepack enable
 WORKDIR /app
 
 FROM base AS build
+# No git hooks inside the image.
+ENV HUSKY=0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .

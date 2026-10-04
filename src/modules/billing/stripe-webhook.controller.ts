@@ -7,6 +7,7 @@ import {
   Post,
   type RawBodyRequest,
   Req,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -18,7 +19,8 @@ import { StripeWebhookService } from './stripe-webhook.service.js';
 @ApiExcludeController()
 @Public()
 @SkipThrottle()
-@Controller('billing/webhook')
+// Unversioned: the URL is registered in the Stripe dashboard.
+@Controller({ path: 'billing/webhook', version: VERSION_NEUTRAL })
 export class StripeWebhookController {
   constructor(private readonly webhooks: StripeWebhookService) {}
 

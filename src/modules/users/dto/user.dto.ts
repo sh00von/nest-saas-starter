@@ -10,6 +10,7 @@ export class UserDto {
   emailVerified: boolean;
   /** False for accounts that only sign in with Google. */
   hasPassword: boolean;
+  banned: boolean;
   createdAt: Date;
 
   static from(user: User): UserDto {
@@ -20,6 +21,7 @@ export class UserDto {
       role: user.role,
       emailVerified: user.emailVerifiedAt !== null,
       hasPassword: user.passwordHash !== null,
+      banned: user.bannedAt !== null,
       createdAt: user.createdAt,
     });
   }

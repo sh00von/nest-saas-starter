@@ -20,7 +20,7 @@ describe('Email flows and account deletion (e2e)', () => {
 
   async function register(email: string, password = 'first-password') {
     const res = await http()
-      .post('/auth/register')
+      .post('/v1/auth/register')
       .set('x-token-transport', 'body')
       .send({ email, password })
       .expect(201);
@@ -32,11 +32,11 @@ describe('Email flows and account deletion (e2e)', () => {
     const { accessToken } = await register(email);
     const token = MailOutbox.token(await t.outbox.next(email));
 
-    await http().post('/auth/verify-email').send({ token }).expect(204);
-    await http().post('/auth/verify-email').send({ token }).expect(400);
+    await http().post('/v1/auth/verify-email').send({ token }).expect(204);
+    await http().post('/v1/auth/verify-email').send({ token }).expect(400);
 
     const me = await http()
-      .get('/users/me')
+      .get('/v1/users/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
     expect(me.body.emailVerified).toBe(true);
@@ -49,28 +49,28 @@ describe('Email flows and account deletion (e2e)', () => {
 
     // Unknown emails get the same answer.
     await http()
-      .post('/auth/forgot-password')
+      .post('/v1/auth/forgot-password')
       .send({ email: uniqueEmail('nobody') })
       .expect(204);
-    await http().post('/auth/forgot-password').send({ email }).expect(204);
+    await http().post('/v1/auth/forgot-password').send({ email }).expect(204);
     const token = MailOutbox.token(await t.outbox.next(email));
 
     await http()
-      .post('/auth/reset-password')
+      .post('/v1/auth/reset-password')
       .send({ token, newPassword: 'second-password' })
       .expect(204);
     await http()
-      .post('/auth/reset-password')
+      .post('/v1/auth/reset-password')
       .send({ token, newPassword: 'third-password' })
       .expect(400);
 
-    await http().post('/auth/refresh').send({ refreshToken }).expect(401);
+    await http().post('/v1/auth/refresh').send({ refreshToken }).expect(401);
     await http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({ email, password: 'first-password' })
       .expect(401);
     await http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({ email, password: 'second-password' })
       .expect(200);
   });
@@ -81,18 +81,18 @@ describe('Email flows and account deletion (e2e)', () => {
     const auth = `Bearer ${accessToken}`;
 
     await http()
-      .delete('/users/me')
+      .delete('/v1/users/me')
       .set('Authorization', auth)
       .send({ password: 'wrong-password' })
       .expect(401);
     await http()
-      .delete('/users/me')
+      .delete('/v1/users/me')
       .set('Authorization', auth)
       .send({ password: 'first-password' })
       .expect(204);
 
     await http()
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({ email, password: 'first-password' })
       .expect(401);
   });

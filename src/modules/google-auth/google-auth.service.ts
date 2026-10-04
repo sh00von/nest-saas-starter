@@ -3,6 +3,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { and, eq } from 'drizzle-orm';
 import { CodeChallengeMethod, OAuth2Client } from 'google-auth-library';
+import { API_PREFIX } from '../../common/api-version.js';
 import { buildUrl } from '../../common/url.js';
 import type { Env } from '../../config/env.js';
 import { type Database, InjectDb } from '../../database/database.module.js';
@@ -47,7 +48,7 @@ export class GoogleAuthService {
       clientSecret: config.get('GOOGLE_CLIENT_SECRET', { infer: true }),
       redirectUri: buildUrl(
         config.get('API_URL', { infer: true }),
-        'auth/google/callback',
+        `${API_PREFIX}/auth/google/callback`,
       ),
     });
   }

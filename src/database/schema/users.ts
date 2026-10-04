@@ -10,6 +10,8 @@ export const users = pgTable('users', {
   name: text(),
   role: userRole().notNull().default('user'),
   emailVerifiedAt: timestamp({ withTimezone: true }),
+  // Banned users cannot sign in or refresh tokens.
+  bannedAt: timestamp({ withTimezone: true }),
   stripeCustomerId: text().unique(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true })

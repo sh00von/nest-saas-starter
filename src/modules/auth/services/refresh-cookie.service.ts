@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { CookieOptions, Request, Response } from 'express';
+import { API_PREFIX } from '../../../common/api-version.js';
 import type { Env } from '../../../config/env.js';
 
 const NAME = 'refresh_token';
@@ -23,7 +24,7 @@ export class RefreshCookieService {
   }
 
   /** Shared by every short-lived auth cookie. */
-  options(path = '/auth'): CookieOptions {
+  options(path = `${API_PREFIX}/auth`): CookieOptions {
     const sameSite = this.config.get('COOKIE_SAME_SITE', { infer: true });
     return {
       httpOnly: true,
