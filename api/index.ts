@@ -23,11 +23,36 @@ export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  if (!isReady) {
-    if (!readyPromise) {
-      readyPromise = bootstrap();
+  try {
+    if (!isReady) {
+      if (!readyPromise) {
+        readyPromise = bootstrap().catch((err: unknown) => {
+          readyPromise = null;
+          throw err;
+        });
+      }
+      await readyPromise;
     }
-    await readyPromise;
+    server(req, res);
+  } catch (err: unknown) {
+    const errorMsg =
+      err instanceof Error ? err.stack || err.message : String(err);
+    console.error('Serverless Function Invocation Error:\n', errorMsg);
+
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(
+        JSON.stringify({
+          statusCode: 500,
+          error: 'FUNCTION_INVOCATION_FAILED',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'Serverless initialization failed',
+          details: errorMsg,
+        }),
+      );
+    }
   }
-  server(req, res);
 }
