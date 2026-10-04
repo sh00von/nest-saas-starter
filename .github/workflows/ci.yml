@@ -11,7 +11,7 @@ jobs:
     env:
       HUSKY: 0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -45,7 +45,7 @@ jobs:
       SEED_ADMIN_EMAIL: admin@example.com
       SEED_ADMIN_PASSWORD: ci-admin-password
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
