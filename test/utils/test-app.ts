@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import type { Mail } from '../../src/modules/mail/mail.service.js';
@@ -60,7 +61,9 @@ export async function createTestApp(options: TestAppOptions = {}) {
   const outbox = new MailOutbox();
   let builder = Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(MailTransport)
-    .useValue(outbox);
+    .useValue(outbox)
+    .overrideGuard(ThrottlerGuard)
+    .useValue({ canActivate: () => true });
   for (const [token, value] of options.overrides ?? []) {
     builder = builder.overrideProvider(token as string).useValue(value);
   }
